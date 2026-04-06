@@ -3,7 +3,7 @@
         <p class="text-center text-gray-500 mb-6">Or continue with</p>
 
         <!-- Google Button -->
-        <a :href="`${apiUrl}/api/auth/google/redirect`"
+        <a :href="`${apiUrl}/auth/google/redirect`"
             class="w-full flex items-center justify-center gap-3 px-6 py-3 bg-white border-2 border-gray-200 rounded-xl hover:border-emerald-400 hover:shadow-lg transition-all mb-4">
             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none">
                 <path fill="#4285F4"
@@ -21,5 +21,5 @@
 </template>
 
 <script setup>
-const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const apiUrl = process.env.VUE_APP_API_URL || 'http://localhost:8000/api'
 </script>

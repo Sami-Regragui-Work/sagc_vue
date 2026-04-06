@@ -3,7 +3,7 @@
         <div class="max-w-2xl mx-auto">
             <!-- Header -->
             <div class="text-center mb-12">
-                <img v-if="authStore.user?.avatar_url" :src="authStore.user.avatar_url" alt="Avatar"
+                <img v-if="avatarUrl" :src="avatarUrl" alt="Avatar"
                     class="w-32 h-32 rounded-full mx-auto mb-6 object-cover" :class="{ 'animate-pulse': loading }" />
                 <div v-else
                     class="w-32 h-32 bg-emerald-200 rounded-full mx-auto mb-6 flex items-center justify-center text-4xl font-bold text-emerald-700"
@@ -284,7 +284,7 @@ const updateProfile = async () => {
         const cleanForm = Object.fromEntries(
             Object.entries(form.value).filter(([key, value]) => {
                 const original = authStore.user?.[key] ?? ''
-                return value !== '' && value !== null && value !== original
+                return value !== original
             })
         )
 
@@ -293,8 +293,6 @@ const updateProfile = async () => {
             updating.value = false
             return
         }
-
-        console.log('Sending:', cleanForm)  // Debug
 
         const response = await api.patch('/me', cleanForm)
 
@@ -346,8 +344,15 @@ const logout = async () => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     delete api.defaults.headers.common['Authorization']
-    router.push('/login') 
+    router.push('/login')
 
 
 }
+
+const avatarUrl = computed(() => {
+    const url = authStore.user?.avatar_url
+    if (!url) return null
+    if (url.startsWith('http://localhost:8000')) return url
+    return `${process.env.VUE_APP_API_URL}/avatar-proxy?url=${encodeURIComponent(url)}`
+})
 </script>
