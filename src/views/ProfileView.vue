@@ -197,7 +197,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/store/auth'
-import api from '@/services/api'
+import { authService } from '@/services/auth'
+import { profileService } from '@/services/profile'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -247,12 +248,10 @@ onMounted(async () => {
         router.push('/login')
         return
     }
-
     try {
-        const response = await api.get('/me')
-        const userData = response.data.user
+        const data = await profileService.getProfile()
+        const userData = data.user
         authStore.setAuthData(authStore.token, userData)
-
         form.value = {
             username: userData.username || '',
             email: userData.email || '',
@@ -268,7 +267,6 @@ onMounted(async () => {
             avatar_url: userData.avatar_url || ''
         }
     } catch (err) {
-        console.error('Profile load failed:', err)
         authStore.clearAuth()
         router.push('/login')
     } finally {
@@ -279,7 +277,6 @@ onMounted(async () => {
 const updateProfile = async () => {
     updating.value = true
     error.value = success.value = ''
-
     try {
         const cleanForm = Object.fromEntries(
             Object.entries(form.value).filter(([key, value]) => {
@@ -287,30 +284,21 @@ const updateProfile = async () => {
                 return value !== original
             })
         )
-
         if (Object.keys(cleanForm).length === 0) {
             success.value = 'No changes to save'
             updating.value = false
             return
         }
-
-        const response = await api.patch('/me', cleanForm)
-
-        const updatedUser = response.data.user || response.data
+        const data = await profileService.updateProfile(cleanForm)
+        const updatedUser = data.user || data
         authStore.setAuthData(authStore.token, updatedUser)
-
         Object.entries(updatedUser).forEach(([key, value]) => {
             form.value[key] = value ?? ''
         })
-
-        success.value = response.data.message || 'Profile updated successfully!'
-
+        success.value = data.message || 'Profile updated successfully!'
     } catch (err) {
-        console.error('Update failed:', err.response?.data)
         if (err.response?.data?.errors) {
-            error.value = Object.values(err.response.data.errors)
-                .flat()
-                .join(', ')
+            error.value = Object.values(err.response.data.errors).flat().join(', ')
         } else {
             error.value = err.response?.data?.message || 'Update failed'
         }
@@ -322,9 +310,8 @@ const updateProfile = async () => {
 const updatePassword = async () => {
     updatingPassword.value = true
     error.value = success.value = ''
-
     try {
-        await api.patch('/me/password', passwordForm.value)
+        await profileService.updatePassword(passwordForm.value)
         success.value = 'Password updated successfully!'
         passwordForm.value = { current_password: '', new_password: '', new_password_confirmation: '' }
     } catch (err) {
@@ -336,17 +323,12 @@ const updatePassword = async () => {
 
 const logout = async () => {
     try {
-        await api.post('/logout')
+        await authService.logout()
     } catch {
         //
     }
     authStore.clearAuth()
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    delete api.defaults.headers.common['Authorization']
     router.push('/login')
-
-
 }
 
 const avatarUrl = computed(() => {

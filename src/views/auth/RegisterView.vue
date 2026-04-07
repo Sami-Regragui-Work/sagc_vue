@@ -39,11 +39,13 @@
 <script setup>
 import { ref, watchEffect } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/store/auth'
 import { authService } from '@/services/auth'
 import AuthForm from '@/components/AuthForm.vue'
 import SocialAuth from '@/components/SocialAuth.vue'
 
 const router = useRouter()
+const authStore = useAuthStore()
 
 const form = ref({
     username: '',
@@ -82,9 +84,10 @@ const register = async () => {
     error.value = ''
 
     try {
-        await authService.register(form.value)
+        const authData = await authService.register(form.value)
         form.value = { username: '', email: '', password: '', password_confirmation: '' }
-        router.push('/login')
+        authStore.setAuthData(authData.token, authData.user)
+        router.push('/me')
     } catch (err) {
         if (err.response?.status === 422) {
             const errors = Object.values(err.response.data.errors).flat()
