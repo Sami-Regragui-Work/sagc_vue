@@ -9,7 +9,7 @@
         </div>
 
         <p v-if="error" class="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm text-center">
-            {{ formatError(error) }}
+            {{ formatError }}
         </p>
 
         <button type="submit" :disabled="loading"

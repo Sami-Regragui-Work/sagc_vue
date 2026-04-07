@@ -127,8 +127,12 @@
                                 {{ updating ? 'Updating...' : 'Update Profile' }}
                             </button>
                             <button type="button" @click="logout"
-                                class="flex-1 bg-red-600 text-white py-3 rounded-xl font-semibold hover:bg-red-700 transition-all shadow-lg">
+                                class="flex-1 bg-gray-600 text-white py-3 rounded-xl font-semibold hover:bg-gray-700 transition-all shadow-lg">
                                 Logout
+                            </button>
+                            <button type="button" @click="showDeleteModal = true"
+                                class="flex-1 bg-red-600 text-white py-3 rounded-xl font-semibold hover:bg-red-700 transition-all shadow-lg">
+                                Delete Account
                             </button>
                         </div>
                     </form>
@@ -190,6 +194,26 @@
                 </div>
             </div>
         </div>
+
+        <!-- Delete modal -->
+        <div v-if="showDeleteModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
+            <div class="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl">
+                <h3 class="text-xl font-bold text-gray-900 mb-2">Delete Account</h3>
+                <p class="text-gray-600 mb-6">
+                    This action is permanent and cannot be undone. All your data will be lost.
+                </p>
+                <div class="flex gap-4">
+                    <button @click="showDeleteModal = false" :disabled="deleting"
+                        class="flex-1 py-3 rounded-xl border-2 border-gray-200 font-semibold hover:border-gray-400 transition-all disabled:opacity-50">
+                        Cancel
+                    </button>
+                    <button @click="deleteAccount" :disabled="deleting"
+                        class="flex-1 bg-red-600 text-white py-3 rounded-xl font-semibold hover:bg-red-700 transition-all shadow-lg disabled:opacity-50">
+                        {{ deleting ? 'Deleting...' : 'Yes, delete' }}
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -214,6 +238,9 @@ const updating = ref(false)
 const updatingPassword = ref(false)
 const error = ref('')
 const success = ref('')
+
+const showDeleteModal = ref(false)
+const deleting = ref(false)
 
 const isDirty = computed(() => {
     const user = authStore.user
@@ -337,4 +364,18 @@ const avatarUrl = computed(() => {
     if (url.startsWith('http://localhost:8000')) return url
     return `${process.env.VUE_APP_API_URL}/avatar-proxy?url=${encodeURIComponent(url)}`
 })
+
+const deleteAccount = async () => {
+    deleting.value = true
+    try {
+        await profileService.deleteAccount()
+        authStore.clearAuth()
+        router.push('/login')
+    } catch (err) {
+        error.value = err.response?.data?.message || 'Failed to delete account'
+        showDeleteModal.value = false
+    } finally {
+        deleting.value = false
+    }
+}
 </script>
